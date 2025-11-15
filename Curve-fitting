@@ -1,0 +1,126 @@
+                                                                                      //Curve Fitting 
+#include <stdio.h>
+#include <stdlib.h>
+
+void print_table(double* x_values, double* y_values, int n) {
+    // Print table of x, y, x^2, x*y and the sums
+    double sum_x = 0, sum_y = 0, sum_x2 = 0, sum_xy = 0;
+
+    printf("%-8s %-8s %-10s %-10s\n", "x", "y", "x^2", "x*y");
+    printf("------------------------------------------\n");
+
+    for (int i = 0; i < n; i++) {
+        double x = x_values[i];
+        double y = y_values[i];
+        double x2 = x * x;
+        double xy = x * y;
+        printf("%-8.4f %-8.4f %-10.4f %-10.4f\n", x, y, x2, xy);
+        sum_x += x;
+        sum_y += y;
+        sum_x2 += x2;
+        sum_xy += xy;
+    }
+
+    printf("------------------------------------------\n");
+    printf("%-8s %-8.4f %-10.4f %-10.4f\n", "SUM", sum_y, sum_x2, sum_xy);
+    printf("\n");
+
+    printf("Σx = %.4f, Σy = %.4f, Σx^2 = %.4f, Σxy = %.4f\n\n", sum_x, sum_y, sum_x2, sum_xy);
+}
+
+void fit_line(double* x_values, double* y_values, int n, double* a0, double* a1) {
+    // Calculate the least squares fit for y = a0 + a1*x
+    double sum_x = 0, sum_y = 0, sum_x2 = 0, sum_xy = 0;
+
+    for (int i = 0; i < n; i++) {
+        double x = x_values[i];
+        double y = y_values[i];
+        double x2 = x * x;
+        double xy = x * y;
+        sum_x += x;
+        sum_y += y;
+        sum_x2 += x2;
+        sum_xy += xy;
+    }
+
+    double denom = n * sum_x2 - sum_x * sum_x;
+    if (denom == 0) {
+        printf("Denominator nearly zero: can't compute unique fit (collinear x?).\n");
+        exit(1);
+    }
+
+    *a1 = (n * sum_xy - sum_x * sum_y) / denom;
+    *a0 = (sum_y - *a1 * sum_x) / n;
+}
+
+double predict(double a0, double a1, double x) {
+    return a0 + a1 * x;
+}
+
+void interactive() {
+    int n;
+
+    printf("Curve fitting (straight line) - enter data points.\n");
+    printf("How many points? ");
+    scanf("%d", &n);
+
+    if (n <= 0) {
+        printf("Number of points must be greater than zero.\n");
+        return;
+    }
+
+    double* x_values = (double*)malloc(n * sizeof(double));
+    double* y_values = (double*)malloc(n * sizeof(double));
+
+    for (int i = 0; i < n; i++) {
+        double x, y;
+        printf("Point %d as 'x y' (e.g. 2 5): ", i + 1);
+        scanf("%lf %lf", &x, &y);
+        x_values[i] = x;
+        y_values[i] = y;
+    }
+
+    printf("\n");
+    print_table(x_values, y_values, n);
+
+    double a0, a1;
+    fit_line(x_values, y_values, n, &a0, &a1);
+
+    printf("Best fit line: y = (%.6f) + (%.6f) x\n", a0, a1);
+
+    char choice;
+    printf("Predict y for some x? (y/n): ");
+    getchar();  // Clear the newline character from the input buffer
+    scanf("%c", &choice);
+
+    if (choice == 'y' || choice == 'Y') {
+        double xv;
+        printf("Enter x: ");
+        scanf("%lf", &xv);
+        printf("Predicted y = %.6f\n", predict(a0, a1, xv));
+    }
+
+    free(x_values);
+    free(y_values);
+}
+
+int main() {
+    // Example usage
+    double x_values[] = {0, 2, 5, 7};
+    double y_values[] = {-1, 5, 12, 20};
+    int n = sizeof(x_values) / sizeof(x_values[0]);
+
+    // Print table and compute
+    print_table(x_values, y_values, n);
+
+    double a0, a1;
+    fit_line(x_values, y_values, n, &a0, &a1);
+
+    printf("Best fit line: y = (%.6f) + (%.6f) x\n", a0, a1);
+    printf("For x = 0, predicted y = %.6f\n", predict(a0, a1, 0));
+
+    // Uncomment the next line to enable interactive mode
+    // interactive();
+
+    return 0;
+}
